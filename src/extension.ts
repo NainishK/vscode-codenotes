@@ -169,7 +169,42 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('codenotes.openStickyNote', (note) => {
         NoteWebview.show(
             `Sticky Note for ${path.basename(note.file)}:${note.line + 1}`,
-            (updatedContent: string) => {}, // Editing can be implemented later
+            (updatedContent: string) => {
+                if (!updatedContent || updatedContent.trim() === '') {
+                    vscode.window.showWarningMessage('Sticky note is empty.');
+                    return;
+                }
+                // Update the note in notes.json
+                const workspaceFolders = vscode.workspace.workspaceFolders;
+                if (!workspaceFolders || workspaceFolders.length === 0) {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
+                const workspaceRoot = workspaceFolders[0].uri.fsPath;
+                const notesDir = path.join(workspaceRoot, '.vscode');
+                const notesFile = path.join(notesDir, 'notes.json');
+                try {
+                    if (!fs.existsSync(notesFile)) {
+                        vscode.window.showErrorMessage('No sticky notes found to update.');
+                        return;
+                    }
+                    let notes: any[] = [];
+                    const raw = fs.readFileSync(notesFile, 'utf8');
+                    notes = JSON.parse(raw);
+                    // Find the note by file and line
+                    const idx = notes.findIndex(n => n.file === note.file && n.line === note.line && n.created === note.created);
+                    if (idx !== -1) {
+                        notes[idx].content = updatedContent;
+                        fs.writeFileSync(notesFile, JSON.stringify(notes, null, 2), 'utf8');
+                        vscode.window.showInformationMessage('Sticky note updated!');
+                        notesProvider.refresh();
+                    } else {
+                        vscode.window.showErrorMessage('Could not find the sticky note to update.');
+                    }
+                } catch (err: any) {
+                    vscode.window.showErrorMessage('Failed to update sticky note: ' + err.message);
+                }
+            },
             undefined,
             note.content
         );
