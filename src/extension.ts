@@ -4,6 +4,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { NotesProvider, StickyNote } from './notesProvider';
+import { NoteWebview } from './noteWebview';
+import { StickyNoteCodeLensProvider } from './stickyNoteCodeLensProvider';
 
 let notesProvider: NotesProvider;
 let stickyNoteDecoration: vscode.TextEditorDecorationType;
@@ -15,12 +17,14 @@ function highlightStickyNotesInEditor(editor: vscode.TextEditor | undefined, not
     for (const note of notes) {
         if (note.file === filePath && note.line < editor.document.lineCount) {
             const lineLength = editor.document.lineAt(note.line).text.length;
+            // Show only the first line with ellipsis if multiline
+            const summary = note.content.split(/\r?\n/)[0] + (note.content.includes('\n') ? ' …' : '');
             decorations.push({
                 range: new vscode.Range(note.line, lineLength, note.line, lineLength),
-                hoverMessage: new vscode.MarkdownString(`**Sticky Note:** ${note.content}`),
+                hoverMessage: new vscode.MarkdownString(`**Sticky Note:**\n${note.content}`),
                 renderOptions: {
                     after: {
-                        contentText: ` 🟨 ${note.content}`,
+                        contentText: ` 🟨 ${summary}`,
                         color: '#FFC107',
                         fontStyle: 'italic',
                         margin: '0 0 0 1em'
@@ -150,7 +154,28 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
-    // Add Sticky Note command
+    // Register CodeLens provider for sticky notes
+    let notesFile: string | undefined;
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+        const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        notesFile = path.join(workspaceRoot, '.vscode', 'notes.json');
+    }
+    const codeLensProvider = new StickyNoteCodeLensProvider(notesFile);
+    context.subscriptions.push(
+        vscode.languages.registerCodeLensProvider({ scheme: 'file' }, codeLensProvider)
+    );
+
+    // Command to open sticky note in Webview
+    context.subscriptions.push(vscode.commands.registerCommand('codenotes.openStickyNote', (note) => {
+        NoteWebview.show(
+            `Sticky Note for ${path.basename(note.file)}:${note.line + 1}`,
+            (updatedContent: string) => {}, // Editing can be implemented later
+            undefined,
+            note.content
+        );
+    }));
+
+    // Add Sticky Note command (now uses Webview for multiline input)
     const addStickyNoteDisposable = vscode.commands.registerCommand('codenotes.addStickyNote', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
@@ -161,48 +186,47 @@ export function activate(context: vscode.ExtensionContext) {
         const filePath = document.uri.fsPath;
         const lineNumber = editor.selection.active.line;
 
-        const noteContent = await vscode.window.showInputBox({
-            prompt: 'Enter your sticky note',
-            placeHolder: 'Type your note here...'
-        });
-        if (!noteContent) {
-            return; // Cancelled or empty
-        }
-
-        // Prepare note object
-        const note = {
-            file: filePath,
-            line: lineNumber,
-            content: noteContent,
-            created: new Date().toISOString()
-        };
-
-        // Save note to .vscode/notes.json in the workspace
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showErrorMessage('No workspace folder found.');
-            return;
-        }
-        const workspaceRoot = workspaceFolders[0].uri.fsPath;
-        const notesDir = path.join(workspaceRoot, '.vscode');
-        const notesFile = path.join(notesDir, 'notes.json');
-
-        try {
-            if (!fs.existsSync(notesDir)) {
-                fs.mkdirSync(notesDir);
+        NoteWebview.show(
+            `Sticky Note for ${path.basename(filePath)}:${lineNumber + 1}`,
+            async (noteContent: string) => {
+                if (!noteContent || noteContent.trim() === '') {
+                    vscode.window.showWarningMessage('Sticky note is empty.');
+                    return;
+                }
+                // Prepare note object
+                const note = {
+                    file: filePath,
+                    line: lineNumber,
+                    content: noteContent,
+                    created: new Date().toISOString()
+                };
+                // Save note to .vscode/notes.json in the workspace
+                const workspaceFolders = vscode.workspace.workspaceFolders;
+                if (!workspaceFolders || workspaceFolders.length === 0) {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
+                const workspaceRoot = workspaceFolders[0].uri.fsPath;
+                const notesDir = path.join(workspaceRoot, '.vscode');
+                const notesFile = path.join(notesDir, 'notes.json');
+                try {
+                    if (!fs.existsSync(notesDir)) {
+                        fs.mkdirSync(notesDir);
+                    }
+                    let notes: any[] = [];
+                    if (fs.existsSync(notesFile)) {
+                        const raw = fs.readFileSync(notesFile, 'utf8');
+                        notes = JSON.parse(raw);
+                    }
+                    notes.push(note);
+                    fs.writeFileSync(notesFile, JSON.stringify(notes, null, 2), 'utf8');
+                    vscode.window.showInformationMessage('Sticky note added!');
+                    notesProvider.refresh();
+                } catch (err: any) {
+                    vscode.window.showErrorMessage('Failed to save sticky note: ' + err.message);
+                }
             }
-            let notes: any[] = [];
-            if (fs.existsSync(notesFile)) {
-                const raw = fs.readFileSync(notesFile, 'utf8');
-                notes = JSON.parse(raw);
-            }
-            notes.push(note);
-            fs.writeFileSync(notesFile, JSON.stringify(notes, null, 2), 'utf8');
-            vscode.window.showInformationMessage('Sticky note added!');
-            notesProvider.refresh();
-        } catch (err: any) {
-            vscode.window.showErrorMessage('Failed to save sticky note: ' + err.message);
-        }
+        );
     });
     context.subscriptions.push(addStickyNoteDisposable);
 }
