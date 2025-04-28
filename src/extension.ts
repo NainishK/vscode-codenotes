@@ -6,13 +6,59 @@ import * as path from 'path';
 import { NotesProvider, StickyNote } from './notesProvider';
 
 let notesProvider: NotesProvider;
+let stickyNoteDecoration: vscode.TextEditorDecorationType;
+
+function highlightStickyNotesInEditor(editor: vscode.TextEditor | undefined, notes: StickyNote[]) {
+    if (!editor) return;
+    const filePath = editor.document.uri.fsPath;
+    const decorations: vscode.DecorationOptions[] = [];
+    for (const note of notes) {
+        if (note.file === filePath && note.line < editor.document.lineCount) {
+            const lineLength = editor.document.lineAt(note.line).text.length;
+            decorations.push({
+                range: new vscode.Range(note.line, lineLength, note.line, lineLength),
+                hoverMessage: new vscode.MarkdownString(`**Sticky Note:** ${note.content}`),
+                renderOptions: {
+                    after: {
+                        contentText: ` 🟨 ${note.content}`,
+                        color: '#FFC107',
+                        fontStyle: 'italic',
+                        margin: '0 0 0 1em'
+                    }
+                }
+            });
+        }
+    }
+    editor.setDecorations(stickyNoteDecoration, decorations);
+}
+
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    stickyNoteDecoration = vscode.window.createTextEditorDecorationType({
+        // No background or border, just inline note
+    });
+
     console.log('CodeNotes extension activated');
     notesProvider = new NotesProvider(context);
     vscode.window.registerTreeDataProvider('codenotesNotesView', notesProvider);
+
+    // Highlight sticky notes on active editor
+    function updateHighlights() {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) return;
+        const notes = notesProvider.getNotes();
+        highlightStickyNotesInEditor(editor, notes);
+    }
+
+    vscode.window.onDidChangeActiveTextEditor(() => updateHighlights());
+    vscode.workspace.onDidChangeTextDocument(() => updateHighlights());
+    notesProvider.onDidChangeTreeData(() => updateHighlights());
+
+    // Initial highlight
+    setTimeout(updateHighlights, 500);
+
 
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
