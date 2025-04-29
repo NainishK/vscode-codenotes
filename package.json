@@ -12,24 +12,24 @@
   "activationEvents": [
     "onCommand:codenotes.helloWorld",
     "onCommand:codenotes.addStickyNote",
-    "onCommand:codenotes.deleteSelectedNote",
-    "onView:codenotesNotesView"
+    "onCommand:codenotes.deleteSelectedNote"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "codenotes-sidebar",
+          "id": "codenotes",
           "title": "CodeNotes",
-          "icon": "resources/codenotes.svg"
+          "icon": "media/codenotes.svg"
         }
       ]
     },
     "views": {
-      "codenotes-sidebar": [
+      "codenotes": [
         {
-          "id": "codenotesNotesView",
+          "type": "webview",
+          "id": "codenotes.notesSidebar",
           "name": "Sticky Notes"
         }
       ]

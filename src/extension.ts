@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { NotesSidebarWebview } from './notesSidebarWebview';
 import { NotesProvider, StickyNote } from './notesProvider';
 import { NoteWebview } from './noteWebview';
 import { StickyNoteCodeLensProvider } from './stickyNoteCodeLensProvider';
@@ -40,6 +41,13 @@ function highlightStickyNotesInEditor(editor: vscode.TextEditor | undefined, not
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    // Register the sidebar WebviewView provider
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            NotesSidebarWebview.viewType,
+            new NotesSidebarWebview(context)
+        )
+    );
     stickyNoteDecoration = vscode.window.createTextEditorDecorationType({
         // No background or border, just inline note
     });
