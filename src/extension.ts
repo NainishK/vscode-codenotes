@@ -206,7 +206,38 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             },
             undefined,
-            note.content
+            note.content,
+            () => {
+                const workspaceFolders = vscode.workspace.workspaceFolders;
+                if (!workspaceFolders || workspaceFolders.length === 0) {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
+                const workspaceRoot = workspaceFolders[0].uri.fsPath;
+                const notesDir = path.join(workspaceRoot, '.vscode');
+                const notesFile = path.join(notesDir, 'notes.json');
+                try {
+                    if (!fs.existsSync(notesFile)) {
+                        vscode.window.showErrorMessage('No sticky notes found to delete.');
+                        return;
+                    }
+                    let notes: any[] = [];
+                    const raw = fs.readFileSync(notesFile, 'utf8');
+                    notes = JSON.parse(raw);
+                    // Find the note by file and line
+                    const idx = notes.findIndex(n => n.file === note.file && n.line === note.line && n.created === note.created);
+                    if (idx !== -1) {
+                        notes.splice(idx, 1);
+                        fs.writeFileSync(notesFile, JSON.stringify(notes, null, 2), 'utf8');
+                        vscode.window.showInformationMessage('Sticky note deleted!');
+                        notesProvider.refresh();
+                    } else {
+                        vscode.window.showErrorMessage('Could not find the sticky note to delete.');
+                    }
+                } catch (err: any) {
+                    vscode.window.showErrorMessage('Failed to delete sticky note: ' + err.message);
+                }
+            }
         );
     }));
 

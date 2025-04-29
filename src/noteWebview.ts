@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 export class NoteWebview {
-    static show(panelTitle: string, onSave: (content: string) => void, onCancel?: () => void, initialContent: string = '') {
+    static show(panelTitle: string, onSave: (content: string) => void, onCancel?: () => void, initialContent: string = '', onDelete?: () => void) {
         const panel = vscode.window.createWebviewPanel(
             'stickyNoteWebview',
             panelTitle,
@@ -18,6 +18,9 @@ export class NoteWebview {
                 panel.dispose();
             } else if (message.command === 'cancel') {
                 if (onCancel) onCancel();
+                panel.dispose();
+            } else if (message.command === 'delete') {
+                if (onDelete) onDelete();
                 panel.dispose();
             }
         });
@@ -56,6 +59,7 @@ export class NoteWebview {
                         cursor: pointer;
                     }
                     button.cancel { background: #eee; color: #444; }
+                    button.delete { background: #ff5252; color: #fff; }
                 </style>
             </head>
             <body>
@@ -65,6 +69,15 @@ export class NoteWebview {
                     <div class="actions">
                         <button onclick="saveNote()">Save</button>
                         <button class="cancel" onclick="cancelNote()">Cancel</button>
+                        <button class="delete" onclick="showDeleteModal()">Delete</button>
+</div>
+<div id="deleteModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.28); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:24px 32px; border-radius:8px; box-shadow:0 4px 24px rgba(0,0,0,0.18); max-width:90vw; min-width:280px; text-align:center; margin:120px auto;">
+        <div style="font-size:1.15em; margin-bottom:20px;">Are you sure you want to delete this sticky note?</div>
+        <button class="delete" onclick="confirmDelete()">Delete</button>
+        <button class="cancel" onclick="hideDeleteModal()">Cancel</button>
+    </div>
+</div>
                     </div>
                 </div>
                 <script>
@@ -74,6 +87,16 @@ export class NoteWebview {
                     }
                     function cancelNote() {
                         vscode.postMessage({ command: 'cancel' });
+                    }
+                    function showDeleteModal() {
+                        document.getElementById('deleteModal').style.display = 'flex';
+                    }
+                    function hideDeleteModal() {
+                        document.getElementById('deleteModal').style.display = 'none';
+                    }
+                    function confirmDelete() {
+                        vscode.postMessage({ command: 'delete' });
+                        hideDeleteModal();
                     }
                 </script>
             </body>
