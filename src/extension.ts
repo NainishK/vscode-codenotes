@@ -241,6 +241,24 @@ export function activate(context: vscode.ExtensionContext) {
         );
     }));
 
+    // Filter Notes command
+    const filterNotesDisposable = vscode.commands.registerCommand('codenotes.filterNotes', async () => {
+        const value = await vscode.window.showInputBox({
+            prompt: 'Filter sticky notes by content, file, or line number',
+            value: ''
+        });
+        if (value !== undefined) {
+            notesProvider.setFilterQuery(value);
+        }
+    });
+    context.subscriptions.push(filterNotesDisposable);
+
+    // Clear Filter command
+    const clearFilterDisposable = vscode.commands.registerCommand('codenotes.clearFilter', () => {
+        notesProvider.setFilterQuery('');
+    });
+    context.subscriptions.push(clearFilterDisposable);
+
     // Add Sticky Note command (now uses Webview for multiline input)
     const addStickyNoteDisposable = vscode.commands.registerCommand('codenotes.addStickyNote', async () => {
         const editor = vscode.window.activeTextEditor;

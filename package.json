@@ -48,6 +48,16 @@
         "command": "codenotes.deleteSelectedNote",
         "title": "Delete Selected Sticky Note",
         "category": "CodeNotes"
+      },
+      {
+        "command": "codenotes.filterNotes",
+        "title": "Filter Sticky Notes",
+        "category": "CodeNotes"
+      },
+      {
+        "command": "codenotes.clearFilter",
+        "title": "Clear Sticky Notes Filter",
+        "category": "CodeNotes"
       }
     ]
   },

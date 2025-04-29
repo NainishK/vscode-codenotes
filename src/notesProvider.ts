@@ -13,10 +13,17 @@ export class NotesProvider implements vscode.TreeDataProvider<StickyNoteTreeItem
     private _onDidChangeTreeData: vscode.EventEmitter<StickyNoteTreeItem | undefined | void> = new vscode.EventEmitter<StickyNoteTreeItem | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<StickyNoteTreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
+    private filterQuery: string = '';
+
     constructor(private context: vscode.ExtensionContext) {}
 
     refresh(): void {
         this._onDidChangeTreeData.fire();
+    }
+
+    setFilterQuery(query: string) {
+        this.filterQuery = query;
+        this.refresh();
     }
 
     getTreeItem(element: StickyNoteTreeItem): vscode.TreeItem {
@@ -43,7 +50,16 @@ export class NotesProvider implements vscode.TreeDataProvider<StickyNoteTreeItem
         }
         try {
             const raw = fs.readFileSync(notesFile, 'utf8');
-            return JSON.parse(raw) as StickyNote[];
+            let notes = JSON.parse(raw) as StickyNote[];
+            if (this.filterQuery && this.filterQuery.trim() !== '') {
+                const q = this.filterQuery.trim().toLowerCase();
+                notes = notes.filter(note =>
+                    note.content.toLowerCase().includes(q) ||
+                    note.file.toLowerCase().includes(q) ||
+                    (note.line + 1).toString() === q
+                );
+            }
+            return notes;
         } catch {
             return [];
         }
