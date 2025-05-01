@@ -8,6 +8,7 @@ export interface StickyNote {
     content: string;
     created: string;
     color?: string; // Optional color for the note
+    name?: string; // Optional name/title for the note
 }
 
 export class NotesProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -98,8 +99,8 @@ export class FileTreeItem extends vscode.TreeItem {
 
 export class StickyNoteTreeItem extends vscode.TreeItem {
     constructor(public readonly note: StickyNote) {
-        super(note.content, vscode.TreeItemCollapsibleState.None);
-        this.tooltip = `${note.content}\n${note.file}:${note.line + 1}`;
+        super(note.name || note.content, vscode.TreeItemCollapsibleState.None);
+        this.tooltip = `${note.name ? note.name + '\n' : ''}${note.content}\n${note.file}:${note.line + 1}`;
         this.description = `#${note.line + 1}`;
         this.command = {
             command: 'codenotes.revealNote',

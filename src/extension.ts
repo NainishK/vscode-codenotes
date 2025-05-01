@@ -18,11 +18,11 @@ function highlightStickyNotesInEditor(editor: vscode.TextEditor | undefined, not
     for (const note of notes) {
         if (note.file === filePath && note.line < editor.document.lineCount) {
             const lineLength = editor.document.lineAt(note.line).text.length;
-            // Show only the first line with ellipsis if multiline
-            const summary = note.content.split(/\r?\n/)[0] + (note.content.includes('\n') ? ' …' : '');
+            // Show note name if available, otherwise show summary of content
+            const summary = note.name ? note.name : note.content.split(/\r?\n/)[0] + (note.content.includes('\n') ? ' …' : '');
             decorations.push({
                 range: new vscode.Range(note.line, lineLength, note.line, lineLength),
-                hoverMessage: new vscode.MarkdownString(`**Sticky Note:**\n${note.content}`),
+                hoverMessage: new vscode.MarkdownString(`**Sticky Note:**\n${note.name ? note.name + '\n' : ''}${note.content}`),
                 renderOptions: {
                     after: {
                         contentText: ` 🟨 ${summary}`,
@@ -206,7 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('codenotes.openStickyNote', (note) => {
         NoteWebview.show(
             `Sticky Note for ${path.basename(note.file)}:${note.line + 1}`,
-            (updatedContent: string, updatedColor?: string) => {
+            (updatedContent: string, updatedColor?: string, updatedName?: string) => {
                 if (!updatedContent || updatedContent.trim() === '') {
                     vscode.window.showWarningMessage('Sticky note is empty.');
                     return;
@@ -232,7 +232,16 @@ export function activate(context: vscode.ExtensionContext) {
                     const idx = notes.findIndex(n => n.file === note.file && n.line === note.line && n.created === note.created);
                     if (idx !== -1) {
                         notes[idx].content = updatedContent;
-                        notes[idx].color = updatedColor || notes[idx].color || '#FFD600';
+                        if (typeof updatedColor === 'string') {
+                            notes[idx].color = updatedColor;
+                        }
+                        if (typeof updatedName === 'string') {
+                            if (updatedName.trim() !== '') {
+                                notes[idx].name = updatedName;
+                            } else {
+                                delete notes[idx].name;
+                            }
+                        }
                         fs.writeFileSync(notesFile, JSON.stringify(notes, null, 2), 'utf8');
                         vscode.window.showInformationMessage('Sticky note updated!');
                         notesProvider.refresh();
@@ -246,6 +255,7 @@ export function activate(context: vscode.ExtensionContext) {
             undefined,
             note.content,
             note.color || '#FFD600',
+            note.name,
             // onDelete callback
             () => {
                 const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -312,7 +322,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         NoteWebview.show(
             `Sticky Note for ${path.basename(filePath)}:${lineNumber + 1}`,
-            async (noteContent: string, color?: string) => {
+            async (noteContent: string, color?: string, name?: string) => {
                 if (!noteContent || noteContent.trim() === '') {
                     vscode.window.showWarningMessage('Sticky note is empty.');
                     return;
@@ -323,7 +333,8 @@ export function activate(context: vscode.ExtensionContext) {
                     line: lineNumber,
                     content: noteContent,
                     created: new Date().toISOString(),
-                    color: color || '#FFD600'
+                    color: color || '#FFD600',
+                    ...(name && name.trim() !== '' ? { name } : {})
                 };
                 // Save note to .vscode/notes.json in the workspace
                 const workspaceFolders = vscode.workspace.workspaceFolders;
