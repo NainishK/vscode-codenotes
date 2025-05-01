@@ -10,7 +10,7 @@ export interface StickyNote {
     color?: string; // Optional color for the note
 }
 
-export class NotesProvider implements vscode.TreeDataProvider<StickyNoteTreeItem> {
+export class NotesProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<StickyNoteTreeItem | undefined | void> = new vscode.EventEmitter<StickyNoteTreeItem | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<StickyNoteTreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
@@ -27,16 +27,27 @@ export class NotesProvider implements vscode.TreeDataProvider<StickyNoteTreeItem
         this.refresh();
     }
 
-    getTreeItem(element: StickyNoteTreeItem): vscode.TreeItem {
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
     }
 
-    getChildren(element?: StickyNoteTreeItem): Thenable<StickyNoteTreeItem[]> {
-        if (element) {
-            return Promise.resolve([]);
+    getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
+        const notes = this.getNotes();
+        if (!element) {
+            // Root: return FileTreeItem[]
+            const files = Array.from(new Set(notes.map(n => n.file)));
+            files.sort();
+            return Promise.resolve(files.map(file => {
+                const noteCount = notes.filter(n => n.file === file).length;
+                return new FileTreeItem(file, noteCount);
+            }));
+        } else if (element instanceof FileTreeItem) {
+            // Children: return StickyNoteTreeItem[] for this file
+            const fileNotes = notes.filter(n => n.file === element.file);
+            fileNotes.sort((a, b) => a.line - b.line);
+            return Promise.resolve(fileNotes.map(note => new StickyNoteTreeItem(note)));
         } else {
-            const notes = this.getNotes();
-            return Promise.resolve(notes.map(note => new StickyNoteTreeItem(note)));
+            return Promise.resolve([]);
         }
     }
 
@@ -73,16 +84,29 @@ export class NotesProvider implements vscode.TreeDataProvider<StickyNoteTreeItem
     }
 }
 
+export class FileTreeItem extends vscode.TreeItem {
+    constructor(public readonly file: string, noteCount: number) {
+        super(path.basename(file), vscode.TreeItemCollapsibleState.Collapsed);
+        this.tooltip = file;
+        this.resourceUri = vscode.Uri.file(file);
+        this.iconPath = new vscode.ThemeIcon('file');
+        this.contextValue = 'file';
+        this.id = file;
+        this.description = `${noteCount} note${noteCount === 1 ? '' : 's'}`;
+    }
+}
+
 export class StickyNoteTreeItem extends vscode.TreeItem {
     constructor(public readonly note: StickyNote) {
-        super(`${path.basename(note.file)}:${note.line + 1} - ${note.content}`, vscode.TreeItemCollapsibleState.None);
+        super(note.content, vscode.TreeItemCollapsibleState.None);
         this.tooltip = `${note.content}\n${note.file}:${note.line + 1}`;
-        this.description = note.content;
+        this.description = `#${note.line + 1}`;
         this.command = {
             command: 'codenotes.revealNote',
             title: 'Reveal Note',
             arguments: [note]
         };
+
         this.iconPath = new vscode.ThemeIcon('note');
         this.contextValue = 'stickyNote';
         this.id = note.file + ':' + note.line + ':' + note.created;

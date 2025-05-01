@@ -55,6 +55,11 @@
         "command": "codenotes.clearFilter",
         "title": "Clear Sticky Notes Filter",
         "category": "CodeNotes"
+      },
+      {
+        "command": "codenotes.moveStickyNote",
+        "title": "Move Sticky Note to Current Line",
+        "category": "CodeNotes"
       }
     ]
   },
@@ -64,6 +69,7 @@
         "command": "codenotes.deleteNote",
         "group": "inline"
       }
+
     ]
   },
   "scripts": {

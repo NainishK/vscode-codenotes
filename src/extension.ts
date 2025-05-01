@@ -9,6 +9,7 @@ import { StickyNoteCodeLensProvider } from './stickyNoteCodeLensProvider';
 
 let notesProvider: NotesProvider;
 let stickyNoteDecoration: vscode.TextEditorDecorationType;
+let lastRevealedNote: StickyNote | undefined = undefined;
 
 function highlightStickyNotesInEditor(editor: vscode.TextEditor | undefined, notes: StickyNote[]) {
     if (!editor) return;
@@ -65,8 +66,53 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
-    // Reveal note command
+    // Move Sticky Note command
+    context.subscriptions.push(vscode.commands.registerCommand('codenotes.moveStickyNote', async () => {
+        if (!lastRevealedNote) {
+            vscode.window.showErrorMessage('No sticky note selected. Please click a sticky note in the sidebar first.');
+            return;
+        }
+        const note = lastRevealedNote;
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showWarningMessage('No active editor found.');
+            return;
+        }
+        if (editor.document.uri.fsPath !== note.file) {
+            vscode.window.showWarningMessage('Open the file associated with this sticky note to move it.');
+            return;
+        }
+        const newLine = editor.selection.active.line;
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            vscode.window.showErrorMessage('No workspace folder found.');
+            return;
+        }
+        const notesFile = path.join(workspaceFolders[0].uri.fsPath, '.vscode', 'notes.json');
+        if (!fs.existsSync(notesFile)) {
+            vscode.window.showErrorMessage('No notes file found.');
+            return;
+        }
+        try {
+            const raw = fs.readFileSync(notesFile, 'utf8');
+            let notes: StickyNote[] = JSON.parse(raw);
+            const idx = notes.findIndex(n => n.file === note.file && n.line === note.line && n.created === note.created);
+            if (idx !== -1) {
+                notes[idx].line = newLine;
+                fs.writeFileSync(notesFile, JSON.stringify(notes, null, 2), 'utf8');
+                notesProvider.refresh();
+                vscode.window.showInformationMessage(`Sticky note moved to line ${newLine + 1}.`);
+            } else {
+                vscode.window.showErrorMessage('Could not find the sticky note to move.');
+            }
+        } catch (err: any) {
+            vscode.window.showErrorMessage('Failed to move sticky note: ' + err.message);
+        }
+    }));
+
+// Reveal note command
     context.subscriptions.push(vscode.commands.registerCommand('codenotes.revealNote', (note: StickyNote) => {
+        lastRevealedNote = note;
         const openPath = vscode.Uri.file(note.file);
         vscode.workspace.openTextDocument(openPath).then(doc => {
             vscode.window.showTextDocument(doc, { preview: false }).then(editor => {

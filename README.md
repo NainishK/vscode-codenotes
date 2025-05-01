@@ -49,6 +49,47 @@ Added features X, Y, and Z.
 
 ---
 
+## CodeNotes
+
+Easily add sticky notes to any line of code, color-code them, and manage them via a sidebar. Notes persist across sessions, are highlighted in your editor, and can be searched, filtered, and deleted.
+
+## Features
+
+- **Sticky Notes**: Attach notes to any line of code in any file.
+- **Color Coding**: Choose from a palette of colors or pick any custom color for each note.
+- **Sidebar Management**: View, search, filter, and delete notes from the sidebar.
+- **Sorting**: Notes in the sidebar are sorted by filename and line number for easy navigation.
+- **Highlighting**: Annotated lines are decorated in the editor with your chosen color.
+- **Multiline Notes**: Add detailed, multiline notes using a webview UI.
+- **Persistent**: Notes are saved in `.vscode/notes.json` and persist across sessions.
+
+## Usage
+
+1. **Add a Sticky Note**
+   - Right-click any line in your code and choose **Add Sticky Note**.
+   - Or use the command palette: `CodeNotes: Add Sticky Note`.
+   - Enter your note and select a color from the palette or use the custom color picker.
+   - Click **Save**.
+
+2. **View & Manage Notes**
+   - Open the **CodeNotes** sidebar to see all notes, sorted by file and line.
+   - Click a note to jump to its location.
+   - Use the filter box to search notes by content, file, or line number.
+
+3. **Edit or Delete Notes**
+   - Click a note in the sidebar and use the context menu to edit or delete.
+   - Or open a note and use the delete button in the webview.
+
+## Screenshots
+
+*(Add screenshots here of the sidebar, color picker, and sticky notes in the editor)*
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+
+---
+
 ## Following extension guidelines
 
 Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
