@@ -44,7 +44,6 @@ export function activate(context: vscode.ExtensionContext) {
         // No background or border, just inline note
     });
 
-    console.log('CodeNotes extension activated');
     notesProvider = new NotesProvider(context);
     vscode.window.registerTreeDataProvider('codenotesNotesView', notesProvider);
 
@@ -64,15 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
     setTimeout(updateHighlights, 500);
 
 
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "codenotes" is now active!');
 
-    // Hello World command (keep for now)
-    const disposable = vscode.commands.registerCommand('codenotes.helloWorld', () => {
-        vscode.window.showInformationMessage('Hello World from CodeNotes!');
-    });
-    context.subscriptions.push(disposable);
 
     // Reveal note command
     context.subscriptions.push(vscode.commands.registerCommand('codenotes.revealNote', (note: StickyNote) => {

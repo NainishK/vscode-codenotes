@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:codenotes.helloWorld",
+
     "onCommand:codenotes.addStickyNote",
     "onCommand:codenotes.deleteSelectedNote",
     "onView:codenotesNotesView"
@@ -35,10 +35,7 @@
       ]
     },
     "commands": [
-      {
-        "command": "codenotes.helloWorld",
-        "title": "Hello World"
-      },
+
       {
         "command": "codenotes.addStickyNote",
         "title": "Add Sticky Note",
