@@ -7,6 +7,7 @@ export interface StickyNote {
     line: number;
     content: string;
     created: string;
+    color?: string; // Optional color for the note
 }
 
 export class NotesProvider implements vscode.TreeDataProvider<StickyNoteTreeItem> {

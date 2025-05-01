@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 export class NoteWebview {
-    static show(panelTitle: string, onSave: (content: string) => void, onCancel?: () => void, initialContent: string = '', onDelete?: () => void) {
+    static show(panelTitle: string, onSave: (content: string, color?: string) => void, onCancel?: () => void, initialContent: string = '', initialColor?: string, onDelete?: () => void) {
         const panel = vscode.window.createWebviewPanel(
             'stickyNoteWebview',
             panelTitle,
@@ -9,12 +9,12 @@ export class NoteWebview {
             { enableScripts: true }
         );
 
-        panel.webview.html = NoteWebview.getHtml(initialContent);
+        panel.webview.html = NoteWebview.getHtml(initialContent, initialColor);
 
         // Handle messages from the webview
         panel.webview.onDidReceiveMessage(message => {
             if (message.command === 'save') {
-                onSave(message.content);
+                onSave(message.content, message.color);
                 panel.dispose();
             } else if (message.command === 'cancel') {
                 if (onCancel) onCancel();
@@ -26,7 +26,7 @@ export class NoteWebview {
         });
     }
 
-    static getHtml(initialContent: string): string {
+    static getHtml(initialContent: string, initialColor?: string): string {
         return `
             <!DOCTYPE html>
             <html lang="en">
@@ -60,13 +60,28 @@ export class NoteWebview {
                     }
                     button.cancel { background: #eee; color: #444; }
                     button.delete { background: #ff5252; color: #fff; }
+                    /* Color palette styles */
+                    .color-picker {
+                        margin-top: 10px;
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: center;
+                    }
+                    .color-option {
+                        border-radius: 50%;
+                        transition: border 0.2s;
+                    }
+                    .color-option.selected, .color-option:focus {
+                        border: 2px solid black !important;
+                    }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <h2>Sticky Note</h2>
-                    <textarea id="noteContent" autofocus>${initialContent.replace(/</g, '&lt;')}</textarea>
-                    <div class="actions">
+<textarea id="noteContent" autofocus>${initialContent.replace(/</g, '&lt;')}</textarea>
+<div class="color-picker" id="colorPicker"></div>
+<div class="actions">
                         <button onclick="saveNote()">Save</button>
                         <button class="cancel" onclick="cancelNote()">Cancel</button>
                         <button class="delete" onclick="showDeleteModal()">Delete</button>
@@ -82,9 +97,75 @@ export class NoteWebview {
                 </div>
                 <script>
                     const vscode = acquireVsCodeApi();
-                    function saveNote() {
-                        vscode.postMessage({ command: 'save', content: document.getElementById('noteContent').value });
-                    }
+                    let selectedColor = "${initialColor || '#FFD600'}";
+const palette = [
+    '#FFD600', // Yellow
+    '#FFCDD2', // Light Red
+    '#B2FF59', // Light Green
+    '#B3E5FC', // Light Blue
+    '#E1BEE7', // Light Purple
+    '#FFF9C4', // Light Yellow
+    '#FFECB3', // Light Amber
+    '#FFFFFF', // White
+    'custom'   // Custom color option
+];
+function renderPalette() {
+    const picker = document.getElementById('colorPicker');
+    picker.innerHTML = '';
+    palette.forEach(color => {
+        if (color === 'custom') {
+            const customDiv = document.createElement('div');
+            customDiv.className = 'color-option';
+            customDiv.style.background = selectedColor && !palette.includes(selectedColor) ? selectedColor : '#fff';
+            customDiv.style.border = '1px dashed #888';
+            customDiv.style.width = '28px';
+            customDiv.style.height = '28px';
+            customDiv.style.display = 'inline-block';
+            customDiv.style.margin = '5px';
+            customDiv.style.cursor = 'pointer';
+            customDiv.title = 'Pick custom color';
+            customDiv.innerHTML = '<span style="font-size:1.2em;position:relative;top:3px;left:7px;">+</span>';
+            customDiv.onclick = () => {
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.value = selectedColor && !palette.includes(selectedColor) ? selectedColor : '#FFD600';
+    input.style.display = 'none';
+    input.addEventListener('input', (e) => {
+        selectedColor = input.value;
+        renderPalette();
+    });
+    input.addEventListener('change', () => {
+        document.body.removeChild(input);
+    });
+    input.addEventListener('blur', () => {
+        if (document.body.contains(input)) document.body.removeChild(input);
+    });
+    document.body.appendChild(input);
+    input.click();
+};
+            picker.appendChild(customDiv);
+        } else {
+            const div = document.createElement('div');
+            div.className = 'color-option';
+            div.style.background = color;
+            div.style.border = color === selectedColor ? '2px solid #333' : '1px solid #ccc';
+            div.style.width = '28px';
+            div.style.height = '28px';
+            div.style.display = 'inline-block';
+            div.style.margin = '5px';
+            div.style.cursor = 'pointer';
+            div.onclick = () => {
+                selectedColor = color;
+                renderPalette();
+            };
+            picker.appendChild(div);
+        }
+    });
+}
+renderPalette();
+function saveNote() {
+    vscode.postMessage({ command: 'save', content: document.getElementById('noteContent').value, color: selectedColor });
+}
                     function cancelNote() {
                         vscode.postMessage({ command: 'cancel' });
                     }

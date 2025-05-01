@@ -25,7 +25,7 @@ function highlightStickyNotesInEditor(editor: vscode.TextEditor | undefined, not
                 renderOptions: {
                     after: {
                         contentText: ` 🟨 ${summary}`,
-                        color: '#FFC107',
+                        color: note.color || '#FFD600',
                         fontStyle: 'italic',
                         margin: '0 0 0 1em'
                     }
@@ -169,7 +169,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('codenotes.openStickyNote', (note) => {
         NoteWebview.show(
             `Sticky Note for ${path.basename(note.file)}:${note.line + 1}`,
-            (updatedContent: string) => {
+            (updatedContent: string, updatedColor?: string) => {
                 if (!updatedContent || updatedContent.trim() === '') {
                     vscode.window.showWarningMessage('Sticky note is empty.');
                     return;
@@ -195,6 +195,7 @@ export function activate(context: vscode.ExtensionContext) {
                     const idx = notes.findIndex(n => n.file === note.file && n.line === note.line && n.created === note.created);
                     if (idx !== -1) {
                         notes[idx].content = updatedContent;
+                        notes[idx].color = updatedColor || notes[idx].color || '#FFD600';
                         fs.writeFileSync(notesFile, JSON.stringify(notes, null, 2), 'utf8');
                         vscode.window.showInformationMessage('Sticky note updated!');
                         notesProvider.refresh();
@@ -207,6 +208,8 @@ export function activate(context: vscode.ExtensionContext) {
             },
             undefined,
             note.content,
+            note.color || '#FFD600',
+            // onDelete callback
             () => {
                 const workspaceFolders = vscode.workspace.workspaceFolders;
                 if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -224,7 +227,7 @@ export function activate(context: vscode.ExtensionContext) {
                     let notes: any[] = [];
                     const raw = fs.readFileSync(notesFile, 'utf8');
                     notes = JSON.parse(raw);
-                    // Find the note by file and line
+                    // Find the note by file, line, and created timestamp
                     const idx = notes.findIndex(n => n.file === note.file && n.line === note.line && n.created === note.created);
                     if (idx !== -1) {
                         notes.splice(idx, 1);
@@ -272,7 +275,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         NoteWebview.show(
             `Sticky Note for ${path.basename(filePath)}:${lineNumber + 1}`,
-            async (noteContent: string) => {
+            async (noteContent: string, color?: string) => {
                 if (!noteContent || noteContent.trim() === '') {
                     vscode.window.showWarningMessage('Sticky note is empty.');
                     return;
@@ -282,7 +285,8 @@ export function activate(context: vscode.ExtensionContext) {
                     file: filePath,
                     line: lineNumber,
                     content: noteContent,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    color: color || '#FFD600'
                 };
                 // Save note to .vscode/notes.json in the workspace
                 const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -309,7 +313,10 @@ export function activate(context: vscode.ExtensionContext) {
                 } catch (err: any) {
                     vscode.window.showErrorMessage('Failed to save sticky note: ' + err.message);
                 }
-            }
+            },
+            undefined,
+            '',
+            '#FFD600'
         );
     });
     context.subscriptions.push(addStickyNoteDisposable);
