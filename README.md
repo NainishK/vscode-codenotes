@@ -4,13 +4,11 @@ This is the README for your extension "codenotes". After writing up a brief desc
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Sticky Note Naming**: Add or edit an optional title for each sticky note. The title appears in the sidebar and inline in the editor if set.
+- **Color Editing**: Change the color of any sticky note at any time. The color picker and palette are always available when creating or editing notes.
+- **Sidebar & Editor Sync**: Renaming or recoloring a note updates its appearance instantly in both the sidebar and the editor's inline highlight.
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![](images/sticky-note-demo.png)
 
 ## Requirements
 
