@@ -1,0 +1,10 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outlined sticky note -->
+  <rect x="4" y="4" width="24" height="24" rx="4" stroke="#444" stroke-width="2" fill="none"/>
+  <!-- Note lines -->
+  <path d="M10 11h12" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+  <path d="M10 15h8" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+  <path d="M10 19h6" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+  <!-- Code symbol: </> -->
+  <text x="21" y="25" text-anchor="middle" font-size="7.5" font-family="monospace" fill="#444">&lt;/&gt;</text>
+</svg>

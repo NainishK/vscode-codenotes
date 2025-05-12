@@ -8,9 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Added
 - Sticky notes now support optional titles. Name or rename any note from the webview.
-- Changed sticky note color can be updated for existing notes.
 - Sidebar and editor highlight update instantly when a note is named or recolored.
-- Title input box is visually compact for a cleaner UI.
 
 
 ### Added

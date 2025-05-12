@@ -39,18 +39,68 @@ export class NoteWebview {
                     .container { padding: 20px; }
                     .note-title-label { font-weight: bold; margin-bottom: 4px; display: block; }
                     .note-title-input { width: 100%; max-width: 340px; font-size: 1.05em; margin-bottom: 10px; padding: 4px; border-radius: 4px; border: 1px solid #ddd; box-sizing: border-box; }
-                    textarea {
+                    .note-content {
                         width: 100%;
                         min-height: 120px;
                         font-size: 1.1em;
-                        background: #fffde4;
+                        background: #fff;
+                        color: #000;
                         border: 1px solid #ffd600;
                         border-radius: 8px;
                         resize: vertical;
                         padding: 10px;
                         box-sizing: border-box;
+                        margin-bottom: 10px;
                     }
                     .actions { margin-top: 16px; }
+                    .toolbar-floating {
+                        position: absolute;
+                        left: 8px;
+                        bottom: 8px;
+                        display: flex;
+                        gap: 4px;
+                        background: rgba(255,255,255,0.92);
+                        border-radius: 6px;
+                        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+                        padding: 2px 6px 2px 4px;
+                        z-index: 10;
+                        align-items: center;
+                    }
+                    .toolbar-icon {
+                        font-size: 1.08em;
+                        color: #444;
+                        cursor: pointer;
+                        padding: 2px 4px;
+                        border-radius: 3px;
+                        transition: background 0.12s;
+                        display: inline-flex;
+                        align-items: center;
+                        user-select: none;
+                    }
+                    .toolbar-icon:hover {
+                        background: #ffe066;
+                        color: #111;
+                    }
+                    .toolbar-color input[type="color"] {
+                        width: 18px;
+                        height: 18px;
+                        border: none;
+                        padding: 0;
+                        margin: 0 2px 0 0;
+                        background: none;
+                        cursor: pointer;
+                        opacity: 0;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                    }
+                    .toolbar-color {
+                        position: relative;
+                        width: 18px;
+                        height: 18px;
+                        display: inline-block;
+                        vertical-align: middle;
+                    }
                     button {
                         background: #ffd600;
                         border: none;
@@ -80,9 +130,21 @@ export class NoteWebview {
             </head>
             <body>
                 <div class="container">
-                    <label class="note-title-label" for="noteTitle">Title (optional):</label>
                     <input id="noteTitle" class="note-title-input" type="text" maxlength="80" placeholder="Note title (optional)" value="${initialName ? initialName.replace(/"/g, '&quot;') : ''}">
-                    <textarea id="noteContent" autofocus>${initialContent.replace(/</g, '&lt;')}</textarea>
+                    <div style="position:relative;">
+                        <div id="noteContent" class="note-content" contenteditable="true" autofocus>${initialContent || ''}</div>
+                        <div class="toolbar-floating" id="toolbar">
+                            <span title="Bold" onclick="format('bold')" class="toolbar-icon"><b>B</b></span>
+                            <span title="Italic" onclick="format('italic')" class="toolbar-icon"><i>I</i></span>
+                            <span title="Underline" onclick="format('underline')" class="toolbar-icon"><u>U</u></span>
+                            <span title="Bulleted List" onclick="format('insertUnorderedList')" class="toolbar-icon">&#8226;</span>
+                            <span title="Numbered List" onclick="format('insertOrderedList')" class="toolbar-icon">1.</span>
+                            <label title="Text Color" class="toolbar-icon toolbar-color">
+                                <input type="color" id="textColorPicker" onchange="setColor(this.value)">
+                                <svg width="16" height="16" style="vertical-align:middle;"><circle cx="8" cy="8" r="6" fill="#222" stroke="#888" stroke-width="1"/></svg>
+                            </label>
+                        </div>
+                    </div>
                     <div class="color-picker" id="colorPicker"></div>
                     <div class="actions">
                         <button id="saveBtn">Save</button>
@@ -100,6 +162,22 @@ export class NoteWebview {
                 <script>
                     const vscode = acquireVsCodeApi();
                     let selectedColor = "${initialColor || '#FFD600'}";
+
+                    // Formatting functions for contenteditable
+                    function format(command, value = null) {
+                        document.execCommand(command, false, value);
+                        document.getElementById('noteContent').focus();
+                    }
+                    function setColor(color) {
+                        format('foreColor', color);
+                        document.getElementById('textColorPicker').value = color;
+                    }
+
+                    // Set default color picker value
+                    window.addEventListener('DOMContentLoaded', () => {
+                        document.getElementById('textColorPicker').value = '#222222';
+                    });
+
                     const palette = [
                         '#FFD600', // Yellow
                         '#FFCDD2', // Light Red
@@ -166,7 +244,7 @@ export class NoteWebview {
                     }
                     renderPalette();
                     document.getElementById('saveBtn').onclick = () => {
-                        const content = (document.getElementById('noteContent')).value;
+                        const content = (document.getElementById('noteContent')).innerHTML;
                         const name = (document.getElementById('noteTitle')).value.trim();
                         vscode.postMessage({ command: 'save', content, color: selectedColor, name });
                     };

@@ -16,13 +16,14 @@
     "onView:codenotesNotesView"
   ],
   "main": "./dist/extension.js",
+  "icon": "media/codenotes.png",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
           "id": "codenotes-sidebar",
           "title": "CodeNotes",
-          "icon": "resources/codenotes.svg"
+          "icon": "media/codenotes-outline.png"
         }
       ]
     },
