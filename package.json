@@ -1,6 +1,6 @@
 {
   "name": "sticky-codenotes",
-  "displayName": "CodeNotes",
+  "displayName": "Sticky CodeNotes",
   "description": "Add sticky notes to code lines and manage them via a sidebar. Persist notes across sessions, highlight annotated lines, and search/filter your notes.",
   "version": "0.0.1",
   "engines": {
