@@ -17,10 +17,10 @@ export class NoteWebview {
                 onSave(message.content, message.color, message.name);
                 panel.dispose();
             } else if (message.command === 'cancel') {
-                if (onCancel) onCancel();
+                if (onCancel) {onCancel();}
                 panel.dispose();
             } else if (message.command === 'delete') {
-                if (onDelete) onDelete();
+                if (onDelete) {onDelete();}
                 panel.dispose();
             }
         });

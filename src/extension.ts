@@ -12,7 +12,7 @@ let stickyNoteDecoration: vscode.TextEditorDecorationType;
 let lastRevealedNote: StickyNote | undefined = undefined;
 
 function highlightStickyNotesInEditor(editor: vscode.TextEditor | undefined, notes: StickyNote[]) {
-    if (!editor) return;
+    if (!editor) {return;}
     const filePath = editor.document.uri.fsPath;
     const decorations: vscode.DecorationOptions[] = [];
     for (const note of notes) {
@@ -51,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Highlight sticky notes on active editor
     function updateHighlights() {
         const editor = vscode.window.activeTextEditor;
-        if (!editor) return;
+        if (!editor) {return;}
         const notes = notesProvider.getNotes();
         highlightStickyNotesInEditor(editor, notes);
     }
@@ -147,6 +147,11 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
+    // Refresh Notes (Sidebar Toolbar)
+    context.subscriptions.push(vscode.commands.registerCommand('codenotes.refreshNotes', () => {
+        notesProvider.refresh();
+    }));
+
     // Delete Selected Sticky Note (Command Palette)
     context.subscriptions.push(vscode.commands.registerCommand('codenotes.deleteSelectedNote', async () => {
         const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -180,7 +185,7 @@ export function activate(context: vscode.ExtensionContext) {
             })),
             { placeHolder: 'Select a sticky note to delete' }
         );
-        if (!pick) return;
+        if (!pick) {return;}
         const filtered = notes.filter((n, i) => i !== pick.idx);
         try {
             fs.writeFileSync(notesFile, JSON.stringify(filtered, null, 2), 'utf8');

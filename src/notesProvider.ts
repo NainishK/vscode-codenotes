@@ -75,7 +75,7 @@ export class NotesProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
             // Sort by filename, then by line number
             notes.sort((a, b) => {
                 const fileCompare = a.file.localeCompare(b.file);
-                if (fileCompare !== 0) return fileCompare;
+                if (fileCompare !== 0) {return fileCompare;}
                 return a.line - b.line;
             });
             return notes;

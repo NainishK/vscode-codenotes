@@ -17,6 +17,20 @@
   ],
   "main": "./dist/extension.js",
   "icon": "media/codenotes.png",
+  "publisher": "NainishK",
+  "author": "Nainish Kher",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NainishK/vscode-codenotes.git"
+  },
+  "keywords": [
+    "notes",
+    "sticky notes",
+    "annotations",
+    "productivity",
+    "todo",
+    "code comments"
+  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -65,12 +79,43 @@
     ]
   },
   "menus": {
+    "view/title": [
+      {
+        "command": "codenotes.refreshNotes",
+        "when": "view == codenotesNotesView",
+        "group": "navigation@1"
+      },
+      {
+        "command": "codenotes.addStickyNote",
+        "when": "view == codenotesNotesView",
+        "group": "navigation@2"
+      },
+      {
+        "command": "codenotes.moveStickyNote",
+        "when": "view == codenotesNotesView",
+        "group": "navigation@3"
+      },
+      {
+        "command": "codenotes.deleteSelectedNote",
+        "when": "view == codenotesNotesView",
+        "group": "navigation@4"
+      },
+      {
+        "command": "codenotes.filterNotes",
+        "when": "view == codenotesNotesView",
+        "group": "navigation@5"
+      },
+      {
+        "command": "codenotes.clearFilter",
+        "when": "view == codenotesNotesView",
+        "group": "navigation@6"
+      }
+    ],
     "view/item/context": [
       {
         "command": "codenotes.deleteNote",
         "group": "inline"
       }
-
     ]
   },
   "scripts": {
